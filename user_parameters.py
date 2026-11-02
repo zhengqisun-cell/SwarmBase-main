@@ -1,7 +1,8 @@
 ##### Insert your robot's MAC ADDRESS here ####
 ## (you can get it by running your arduino and looking at the serial monitor for your flying drone) ##
 
-robot_macs = ["48:27:E2:E6:E6:44"]
+robot_macs = ["48:27:E2:E6:E6:44"] 
+#R1 :80:B5:4E:C4:51:48 R2: 48:27:E2:E6:E6:44
 tensile_masters = []
 tensile_followers = []
 defender_macs = []
@@ -16,7 +17,7 @@ DEFENDER_MACS = [str.lower(robot) for robot in defender_macs]
 ## may look like "COM5" in windows or "/dev/tty.usbmodem14301" in mac  #
 ## look in arduino for the port that your specific transeiver is connected to  ##
 ## Note: make sure that your serial monitor is OFF in arduino or else you will get "access is denied" error. ##
-SERIAL_PORT = "COM12"
+SERIAL_PORT = "/dev/ttyUSB0"
 
 
 
@@ -27,14 +28,15 @@ PRINT_JOYSTICK = True
 """
 FullBicopterNicla notes:
 	Controls:
-		Left joystick applies height control (line 128)
-		Right joystick applies yaw control (line 144)
-		Right trigger applies forward in x (line 150)
-		Left trigger applies backward in x (line 150)
+		Left joystick vertical applies height control (15% deadzone)
+		Right joystick horizontal applies yaw control (15% deadzone)
+		Right trigger applies forward in x; left trigger applies backward in x
+		Triggers are normalized from -1..1 to 0..1 with a 5% released deadzone
+		Left joystick horizontal and right joystick vertical are unused
 
-		X button toggles nicla control (line 113)
-		B button toggles the system on or off (starts in 'off' state) (line 105)
-		Y button stops the python program (line 103)
+		A selects autonomous mode; X selects ball mode; Y selects goal mode
+		B toggles the system on or off (starts in 'off' state; holding repeats)
+		Releasing the controls requests no motion; it does not disarm the robot
 
 		You may want to change these if you think 
 		the controls should be faster or slower
@@ -71,3 +73,7 @@ FullBicopterNicla notes:
 		n_max_x, n_max_y: the length and width in pixels of the nicla frame (HQVGA is 240,160)
 		h_ratio: used in statemachine to determine when the robot is too close to goal (should be >.7)
 """	
+
+# ManualPlus diagnostics: optional robot USB input; never used to transmit controls.
+ROBOT_LOG_PORT = "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_48:27:E2:E6:E6:44-if00"
+ROBOT_LOG_MAC = "48:27:e2:e6:e6:44"
