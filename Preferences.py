@@ -6,27 +6,32 @@ preferences = {
 		{"data_type": DataType_Boolean, "key": "zEn", "value": True}, # Enable height controller
 		{"data_type": DataType_Boolean, "key": "rollEn", "value": False}, # Enable roll controller
 		{"data_type": DataType_Boolean, "key": "rotateEn", "value": False}, # Enable rotation controller
-		{"data_type": DataType_Boolean, "key": "pitchEn", "value": False}, # Enable pitch controller
+		{"data_type": DataType_Boolean, "key": "pitchEn", "value": True}, # Zero is captured automatically while Off; correction limited to +-25 deg in firmware (2026-10-29)
 		{"data_type": DataType_Boolean, "key": "yawEn", "value": True}, # Enable yaw controller
+		{"data_type": DataType_Boolean, "key": "yawRateEuler", "value": False}, # Euler-kinematics heading rate needs an absolute attitude reference, which is lost after a reboot without power cycle (flight 2026-10-30 13:12); use the fixed axis below instead
+		{"data_type": DataType_Int, "key": "yawRateAxis", "value": 7}, # Heading rate = gyro y: the IMU is mounted ~90 deg rolled, bench-verified 2026-10-30 (raw gyro z = swing rate)
+		{"data_type": DataType_Float, "key": "yawRateSign", "value": 1},
+		{"data_type": DataType_Float, "key": "yawAuthRef", "value": 0.25}, # Yaw output scaled down above this thrust level: a forward push at full thrust otherwise turns any heading error into a spin (sim 2026-10-30)
+		{"data_type": DataType_Boolean, "key": "imuGuard", "value": False}, # False: if the IMU stream stops, keep flying as a plain manual craft (baro height hold, stick yaw, no pitch comp); True: stop the motors (2026-10-30)
 
 		{"data_type": DataType_Float, "key": "kpyaw", "value": 1.7}, # Proportional value for yaw controller
 		{"data_type": DataType_Float, "key": "kppyaw", "value": 0.03}, 
 		{"data_type": DataType_Float, "key": "kdyaw", "value": 0.045}, # Derivative value for yaw controller
-		{"data_type": DataType_Float, "key": "kddyaw", "value": 0.03},
+		{"data_type": DataType_Float, "key": "kddyaw", "value": 0.03}, # 0.15 kept yaw torque at its limit and turned forward/back into spinning (2026-10-29)
 		{"data_type": DataType_Float, "key": "kiyaw", "value": 0}, # Integral value for yaw controller
 		{"data_type": DataType_Float, "key": "kiyawrate", "value": 0},
 
-		{"data_type": DataType_Float, "key": "kpz", "value": 2.5}, # Proportional value for height controller
+		{"data_type": DataType_Float, "key": "kpz", "value": 1.5}, # Proportional value for height controller; 2.5 overshot 0<->100% motor (2026-10-29)
 		{"data_type": DataType_Float, "key": "kdz", "value": 1.2}, # Derivative value for height controller
-		{"data_type": DataType_Float, "key": "kiz", "value": 0.0}, # Integral value for yaw controller
+		{"data_type": DataType_Float, "key": "kiz", "value": 0.5}, # Integral value for height controller
 
 		{"data_type": DataType_Float, "key": "kproll", "value": 0}, # Proportional value for roll controller
 		{"data_type": DataType_Float, "key": "kdroll", "value": 0}, # Derivative value for roll controller
 		{"data_type": DataType_Float, "key": "kppitch", "value": 0}, # Proportional value for pitch controller
-		{"data_type": DataType_Float, "key": "kdpitch", "value": -0.3}, # Derivative value pitch controller
+		{"data_type": DataType_Float, "key": "kdpitch", "value": 0}, # Derivative value pitch controller; sign not verified, keep 0
 
-		{"data_type": DataType_Float, "key": "z_int_low", "value": 0}, 
-		{"data_type": DataType_Float, "key": "z_int_high", "value": 0.15},
+		{"data_type": DataType_Float, "key": "z_int_low", "value": 0.2}, # Floor of the height integral = hover lift feedforward (2026-10-29)
+		{"data_type": DataType_Float, "key": "z_int_high", "value": 0.8},
 		{"data_type": DataType_Float, "key": "yawRateIntRange", "value": 0},
 		{"data_type": DataType_Float, "key": "lx", "value": 0.1},
         
@@ -34,9 +39,14 @@ preferences = {
 		{"data_type": DataType_Float, "key": "servoRange", "value": 360}, # Range of values for the servo
 		{"data_type": DataType_Float, "key": "servoBeta", "value": 180}, # Initial point of the value
 		{"data_type": DataType_Float, "key": "servo_move_min", "value": 0},
-		{"data_type": DataType_Float, "key": "botZlim", "value": -1},
-		{"data_type": DataType_Float, "key": "pitchOffset", "value": 0},
-		{"data_type": DataType_Float, "key": "pitchInvert", "value": -1},
+		{"data_type": DataType_Float, "key": "botZlim", "value": -0.5}, # Downward thrust allowed; needs the firmware with up/down hysteresis (2026-11-02). 0 = no downward thrust (old firmware: flips swept the motors through forward)
+		{"data_type": DataType_Float, "key": "zDownErr", "value": 0.8}, # Thrust flips down when the height target is this many m below (full stick down = 1.5 m); back up within half of it
+		{"data_type": DataType_Float, "key": "zDownOn", "value": 0.1}, # Only with zEn off: Fz must pass this on the other side instead
+		{"data_type": DataType_Float, "key": "zDownMs", "value": 300}, # ... for this many ms
+		{"data_type": DataType_Float, "key": "zCoastMs", "value": 150}, # Flip: motors off, servos held, props spin down
+		{"data_type": DataType_Float, "key": "zSwingMs", "value": 350}, # Flip: servos swing to the other side, motors still off
+		{"data_type": DataType_Float, "key": "pitchOffset", "value": 0}, # Trim in degrees; the zero is now captured automatically while Off (2026-10-29)
+		{"data_type": DataType_Float, "key": "pitchInvert", "value": -1}, # IMU X angle drops when the nose goes down (flight attitude)
 		
 		{"data_type": DataType_Int, "key": "num_charges", "value": 4}, # Number of charges before switching to the next mode
 		{"data_type": DataType_Int, "key": "time_in_mode", "value": 120}, # Time(s) that a robot will continue searching before switching to another mode

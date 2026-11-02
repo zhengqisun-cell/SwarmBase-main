@@ -2,6 +2,7 @@ import serial
 import struct
 import time
 import codecs
+import math
 
 # Message and data type definitions
 MessageType_Parameter = 0x68
@@ -11,17 +12,29 @@ DataType_String = 0x03
 DataType_Boolean = 0x04
 
 class SerialController:
-    def __init__(self, port, baudrate=115200, timeout=2):
+    def __init__(self, port, baudrate=115200, timeout=2, observer=None):
+        self.observer = observer
         try:
             self.serial = serial.Serial(port, baudrate, timeout=timeout)
             self.serial.reset_input_buffer()
             self.values = None
+            self.extra = {}  # health pages 2-4 from the robot, keyed by page
+            self._notify("base_open", port=port, baudrate=baudrate)
         except serial.SerialException as se:
             self.serial = None
             self.values = None
+            self._notify("base_error", error=str(se))
             print("Serial port error:", str(se).split(":")[0])
             exit(1)
         
+    def _notify(self, kind, **data):
+        if self.observer:
+            try:
+                self.observer(kind, **data)
+            except Exception as exc:
+                # Diagnostics must not change packet generation or control behavior.
+                print("Diagnostics logging error:", exc)
+
     def manage_peer(self, operation, mac_address=None):
         time.sleep(.02)
         self.serial.reset_input_buffer()
@@ -37,6 +50,7 @@ class SerialController:
             print("Invalid operation or MAC address")
             
 
+        self._notify("tx_peer", operation=operation, mac=mac_address)
         self.wait_for_acknowledgement()
 
     def send_control_params(self, mac_address, params):
@@ -46,6 +60,7 @@ class SerialController:
         mac_bytes = bytes(int(x, 16) for x in mac_address.split(':'))
         data = struct.pack('<6B13f', *mac_bytes, *params)  # Prefix data with MAC address
         self.serial.write(b'C' + data)  # 'C' indicates a control command
+        self._notify("tx_control", mac=mac_address, params=list(struct.unpack('<13f', data[6:])), packet_hex=(b'C'+data).hex())
         
         # print(f"Control parameters sent to {mac_address}.")
         self.wait_for_acknowledgement()
@@ -71,6 +86,7 @@ class SerialController:
             buffer.extend(struct.pack('<?', value))
         
         self.serial.write(b'D' + buffer)
+        self._notify("tx_preference", mac=peer_mac, key=key, value=value, packet_hex=(b'D'+buffer).hex())
         
         self.wait_for_acknowledgement()
         print("Sending Preference: ", key, ":", value, ", len:", len(buffer))
@@ -79,8 +95,20 @@ class SerialController:
         self.serial.reset_input_buffer()
         self.serial.write(b'I')
         incoming = self.serial.readline()#.decode().strip()
+        self._notify("base_telemetry_response", packet_hex=incoming.hex())
         if (len(incoming) >= 24):
-            self.values = struct.unpack('<6f', incoming[0:24])
+            values = struct.unpack('<6f', incoming[0:24])
+            if not all(math.isfinite(v) for v in values):
+                self._notify("base_error", error="Telemetry has non-finite values; ignored by the dashboard")
+                return self.values
+            if values[5] <= -1.5:
+                # Health page: the robot puts -page in the battery slot, which is never negative
+                page = int(round(-values[5]))
+                self.extra[page] = values[:5]
+                self._notify("telemetry_extra", page=page, values=list(values[:5]), packet_hex=incoming.hex())
+                return self.values
+            self.values = values
+            self._notify("telemetry", values=list(self.values), packet_hex=incoming.hex())
         else:
             return None
         return self.values
@@ -90,6 +118,7 @@ class SerialController:
         time.sleep(.01)
         try:
             incoming = self.serial.readline()#.decode().strip()
+            self._notify("base_response", packet_hex=incoming.hex(), text=incoming.decode(errors="replace").strip())
             if incoming == "":
                 print("Timeout or no data received.")
                 return False
@@ -99,11 +128,13 @@ class SerialController:
             self.serial.flush()
             return True
         except serial.SerialException as e:
+            self._notify("base_error", error=str(e))
             print("Serial communication error:", e)
             return False
 
     def close(self):
         self.serial.close()
+        self._notify("base_closed")
 
 
 # Example usage

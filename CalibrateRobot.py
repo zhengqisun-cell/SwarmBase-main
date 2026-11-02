@@ -1,6 +1,8 @@
 '''
 Calibrate your robot!
-In order to calibrate, 
+REMOVE THE PROPELLERS FIRST: on the next power-up the firmware sends full throttle
+for about 8 s; an ESC that does not enter calibration spins its motor at full speed.
+In order to calibrate,
     1) make sure your drone is on and your mac/port are correct
     2) run this python file
     3) unplug your robot, then replug in with a battery

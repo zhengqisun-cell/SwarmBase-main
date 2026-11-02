@@ -1,5 +1,8 @@
 from comm.Serial import SerialController
-from gui.simpleGUI import SimpleGUI
+from gui.manualDashboard import ManualDashboard
+from comm.FlightDiagnostics import FlightDiagnostics, COLORS
+from pathlib import Path
+import user_parameters
 from user_parameters import ROBOT_MACS,  SERIAL_PORT
 import time
 
@@ -11,6 +14,10 @@ PRINT_JOYSTICK = True
 """
 class RobotMaster:
     def __init__(self, dt=0.3):
+        self.diagnostics = FlightDiagnostics(
+            Path(__file__).resolve().parents[1] / "logs",
+            getattr(user_parameters, "ROBOT_LOG_PORT", None),
+            getattr(user_parameters, "ROBOT_LOG_MAC", None))
         self.serial = None
         self.robots = None # The list of robots
         self.ready = None
@@ -26,8 +33,9 @@ class RobotMaster:
     def setup(self, robots, camera="nicla", serial=SERIAL_PORT):
         self.robots = robots
         self.ready = [0 for _ in range(len(robots))]
-        self.serial = SerialController(serial, timeout=0.5)
-        self.mygui = SimpleGUI(camera)
+        self.colors = [0 for _ in range(len(robots))]
+        self.serial = SerialController(serial, timeout=0.5, observer=self.diagnostics.observe)
+        self.mygui = ManualDashboard(self.diagnostics, camera)
         for robot_mac in self.robots:
             self.serial.manage_peer("A", robot_mac)
             self.serial.manage_peer("G", robot_mac)
@@ -39,6 +47,9 @@ class RobotMaster:
         return self.mygui.get_last_n_keys(num_keys)
 
     def updateGui(self, height=0.0, tz=0.0, printValues=False):
+        selected = self.robots[self.current_robot_index] if self.current_robot_index != -1 else None
+        if self.diagnostics.selected != selected:
+            self.diagnostics.select(selected)
         
         sensors = None
         if self.current_robot_index != -1:
@@ -86,6 +97,7 @@ class RobotMaster:
 
     
     def processManual(self, axis, buttons, print_vals=False):
+        self.diagnostics.joystick(axis, buttons)
         if self.current_robot_index == -1:
             self.updateGui()
             return
@@ -107,9 +119,15 @@ class RobotMaster:
         # Update old button states
         self.buttons = buttons[:]
 
+        # Axes: left Y, left X, right Y, right X, LT, RT.
         fz = -axis[0] * self.dt if abs(axis[0]) >= 0.15 else 0
-        tz = -axis[4] * self.dt if abs(axis[4]) >= 0.15 else 0
-        fx_ave = (-axis[2] + axis[5])
+        tz = -axis[3] * self.dt if abs(axis[3]) >= 0.15 else 0
+        # Xbox triggers are -1 when released; normalize to 0..1 before mixing.
+        left_trigger = max(0.0, min(1.0, (axis[4] + 1.0) / 2.0))
+        right_trigger = max(0.0, min(1.0, (axis[5] + 1.0) / 2.0))
+        left_trigger = left_trigger if left_trigger >= 0.05 else 0.0
+        right_trigger = right_trigger if right_trigger >= 0.05 else 0.0
+        fx_ave = right_trigger - left_trigger
 
         # send control parameters
         
@@ -118,7 +136,15 @@ class RobotMaster:
         self.updateGui(self.height, self.tz, print_vals)
 
 
-        self.serial.send_control_params(currRobot, (currState, fx_ave, fz, 0, tz, buttons[5]-buttons[4], 1, 0, 0, 0, 0, 0, 0))
+        currColor = self.colors[self.current_robot_index]
+        self.serial.send_control_params(currRobot, (currState, fx_ave, fz, 0, tz, buttons[5]-buttons[4], 1, currColor, 0, 0, 0, 0, 0))
+
+    def setColor(self, color):
+        """Choose the balloon color for the selected robot, or for all robots if none is selected."""
+        targets = [self.current_robot_index] if self.current_robot_index != -1 else range(len(self.robots))
+        for i in targets:
+            self.colors[i] = color
+        print("Balloon color:", COLORS[color], "->", "robot %d" % (self.current_robot_index + 1) if self.current_robot_index != -1 else "all robots")
 
 
     def functionFactory(self, c, func, verbose=""):
