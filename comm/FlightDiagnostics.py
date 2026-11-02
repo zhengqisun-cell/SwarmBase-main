@@ -2,13 +2,16 @@
 from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
-import fcntl
 import json
 import math
 import os
 import struct
-import termios
 import time
+try:
+    import fcntl
+    import termios
+except ImportError:  # Windows: no passive robot USB reader; everything else works
+    fcntl = termios = None
 
 MODES = {0: 'Off', 1: 'Manual', 2: 'Auto', 3: 'Balloon', 4: 'Goal', 5: 'Feedback toggle'}
 # Balloon color sent in control param 7; 0 leaves the camera's own setting
@@ -54,6 +57,8 @@ class FlightDiagnostics:
         self.pending = bytearray()
         self.retry_at = 0
         self.robot_status = 'Waiting for robot USB; wireless control unaffected'
+        if termios is None and robot_port:
+            self.robot_status = 'Robot USB log not supported on this OS; wireless control unaffected'
         self.log_error = None
         self.selected = None
         self.base_open = False
@@ -163,7 +168,7 @@ class FlightDiagnostics:
             self.config = parsed
 
     def poll(self):
-        if self.closed or not self.passive or not self.robot_port:
+        if self.closed or not self.passive or not self.robot_port or termios is None:
             return
         now = time.monotonic()
         if self.fd is None:

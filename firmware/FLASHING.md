@@ -106,7 +106,7 @@ Gryo Integrated Rotation vector enabled
 
 ## 6. 配置地面站并下发参数
 
-地面站需在 **Linux 或 macOS** 上运行：日志模块 `comm/FlightDiagnostics.py` 用到 `fcntl`/`termios`，Windows 上 `RobotControl.py` 启动即报错（固件编译烧录在 Windows 上没问题）。
+地面站可在 Linux、macOS、Windows 上运行。Windows 上不读取机器人 USB 日志（`ROBOT_LOG_PORT` 会被忽略，仪表盘显示 "Robot USB log not supported on this OS"），无线控制和地面站日志 `logs/` 不受影响。
 
 1. 安装 Python 依赖（在仓库根目录；测试环境：Python 3.12、pyserial 3.5、pygame 2.6.1、matplotlib 3.6.3、numpy 1.26.4）：
    ```bash
@@ -114,14 +114,20 @@ Gryo Integrated Rotation vector enabled
    python3 -m venv .venv
    .venv/bin/pip install pyserial pygame matplotlib numpy
    ```
+   Windows（安装 Python 时勾选 tcl/tk，默认就有）：
+   ```bat
+   python -m venv .venv
+   .venv\Scripts\python -m pip install pyserial pygame matplotlib numpy
+   ```
 2. 编辑 `user_parameters.py`：
    - `robot_macs = ["<第 5 节记下的 MAC>"]`
-   - `SERIAL_PORT = "<基站串口>"`
+   - `SERIAL_PORT = "<基站串口>"`（Windows 上形如 `"COM5"`）
    - `ROBOT_LOG_PORT`：机器人 USB 日志口（可选，只用于记录日志）；不用时可保持原样，找不到会自动跳过。
 3. 接上 Xbox 手柄，启动：
    ```bash
    .venv/bin/python RobotControl.py
    ```
+   Windows：`.venv\Scripts\python RobotControl.py`
 4. 点一下仪表盘窗口，按 `1` 再按 `Enter` 选中机器人，再按 **`p` 下发参数**。
    `Preferences.py` 是按本固件设置的（`pitchEn=True`、`botZlim=-0.5` 等），**必须先烧好本固件再按 `p`**，旧固件收到这些参数会出问题。
 
@@ -144,7 +150,9 @@ Gryo Integrated Rotation vector enabled
 
 ## 已知限制
 
-- 地面站暂不支持 Windows（见第 6 节）。
+- Windows 上不记录机器人 USB 日志（见第 6 节）。
+- Xbox 手柄的原始轴编号在 Windows 和 Linux 上不同，`input/JoystickManager.py` 按系统自动选择（Linux 已实测；Windows 按 pygame 文档的 XInput 顺序：右摇杆 2/3、LT 4、RT 5）。macOS 沿用 Linux 编号，未测试。
+- Windows 支持是在 Linux 上模拟验证的，**尚未在真实 Windows 电脑上跑过**。在 Windows 上第一次使用时，拆桨、进入手动模式，逐个操作摇杆和扳机，确认第 7 节第 3、4 步的舵机/电机反应正确；松开所有摇杆扳机时不应有任何动作。
 
 ## 尚未经实机验证
 
