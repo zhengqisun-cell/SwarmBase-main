@@ -1,25 +1,25 @@
 # SwarmBase
 
-本分支 `modified-blimpswarm`：改版组合（截至 2026-11-02）。
+Branch `modified-blimpswarm`: the modified setup (as of 2026-11-02).
 
-**上手请先看 [firmware/FLASHING.md](firmware/FLASHING.md)**：编译环境、烧录机器人与基站、地面站配置、第一次上电检查。
+**Start with [firmware/FLASHING.md](firmware/FLASHING.md)**: build environment, flashing the robot and base station, ground-station setup, and checks before the first flight.
 
-- 根目录：电脑端地面站（本地修改版：手柄映射修正、飞行日志、仪表盘），操作说明见 `CONTROLS.md`。
-- `firmware/`：机器人固件 BlimpSwarm 修改版，修改记录见 `firmware/MANUAL-FLIGHT-NOTES.md` 和源码注释。
+- Repository root: PC ground station (local modified version: controller mapping fix, flight logs, dashboard, Windows support); controls are described in `CONTROLS.md`.
+- `firmware/`: modified BlimpSwarm robot firmware; see `firmware/MANUAL-FLIGHT-NOTES.md` (historical notes) and the source comments.
 
-主要修改（相对原项目）：
-- 推力幅值与方向成对计算（原版交叉配对，前进分量大时偏航力矩反向）；偏航倾角上限，高推力时缩小偏航指令（`yawAuthRef`）。
-- 偏航角速度轴可选（`yawRateAxis=7`：IMU 侧装，陀螺 y 为航向角速度）。
-- 俯仰补偿：停机时自动取零点，限制 ±25°。
-- 向下推力：按高度误差加回差（`zDownErr`、`zDownMs`），翻转时先断推力（`zCoastMs`、`zSwingMs`）；后退时舵机不再在 ±180° 处整圈甩动。
-- 两路电机 PWM 统一 55 Hz，舵机 14 位固定量化，手动模式保持目标初始化。
-- IMU：看门狗只计读取时间、不再强制重新初始化；恢复 `softReset()` 启动流程。
-- 遥测健康页（姿态、输出、健康）和 USB 执行日志。
+Main changes from the original project:
+- Each motor's thrust and direction are computed from the same vector (the original paired them crosswise, which reversed the yaw torque once the forward part outweighed the lift); yaw tilt limit, and the yaw command is scaled down at high thrust (`yawAuthRef`).
+- Selectable yaw-rate axis (`yawRateAxis=7`: the IMU is mounted on its side, so gyro y is the heading rate).
+- Pitch compensation: zero captured automatically while Off, limited to ±25°.
+- Downward thrust: up/down switch with hysteresis on the height error (`zDownErr`, `zDownMs`); the motors are cut while the servos flip (`zCoastMs`, `zSwingMs`); no more full-turn servo swings at ±180° when flying backward.
+- Both motors at 55 Hz PWM, fixed 14-bit servo quantization, manual hold targets initialized from the sensors.
+- IMU: the watchdog counts only polling time and no longer forces a re-initialization; the `softReset()` start-up sequence is restored.
+- Telemetry health pages (attitude, outputs, health) and a USB execution log.
 
-未经实机验证：向下推力回差、IMU 数据流能否持续（2026-11-02 静置台架上能读到姿态，未在转动下确认）。
+Not yet verified on the real robot: downward thrust hysteresis, and whether the IMU data stream stays continuous (attitude is read on a still bench on 2026-11-02, not yet confirmed while moving).
 
-`Preferences.py` 已按此固件设置：`pitchEn=True`、`botZlim=-0.5`；必须先烧录本固件再按 `p` 下发。
+`Preferences.py` is set for this firmware: `pitchEn=True`, `botZlim=-0.5`; flash this firmware before pressing `p` to send them.
 
-编译烧录见 `firmware/FLASHING.md`。本机也可用 `firmware/firmware.sh build robot` / `upload robot <串口>`，该脚本使用 `firmware/.toolchain`（Arduino ESP32 核心 2.0.17、ESP32Servo 1.2.1，未包含在仓库中）。
+For building and flashing see `firmware/FLASHING.md`. On the author's machine `firmware/firmware.sh build robot` / `upload robot <port>` also works; that script uses `firmware/.toolchain` (Arduino ESP32 core 2.0.17, ESP32Servo 1.2.1, not included in the repository).
 
-未包含：飞行日志 `logs/`、`.venv`、编译产物、工具链、本地备份（`.bak`、`preserved/`）、上游 `docs/`。
+Not included: flight logs `logs/`, `.venv`, build outputs, the toolchain, local backups (`.bak`, `preserved/`), and the upstream `docs/`.
