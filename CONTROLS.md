@@ -25,12 +25,12 @@ Before starting:
 <!-- quick-reference -->
 ```text
 KEYBOARD (dashboard window focused)            XBOX CONTROLLER (selected robot)
-  1-9 then Enter  select robot N                 B             Off -> Manual; any other -> Off
+  1-9 then Enter  select robot N                 B (tap once)  Off -> Manual; any other -> Off
   0 then Enter    deselect                       A / X / Y     Auto / Balloon / Goal *
   s               stop: all robots, N s = one    Left stick    up / down = height
   b               autonomous balloon search      Right stick   left / right = yaw
   g               autonomous goal *              RT / LT       forward / backward
-  c               calibrate sensors              LB / RB       no effect on this robot
+  c               ESC calibration, props off!    LB / RB       no effect on this robot
   p               send preferences
   a / d           attacker / defender prefs    * The current robot firmware treats every
   y / o           yellow / orange prefs (avoid)  autonomous mode as balloon tracking.
@@ -52,7 +52,7 @@ Keys work only while the dashboard window has focus.
 | `s` | Stop: switch to Off. With no number typed first it stops **all** robots; type a number first (`1` `s`) to stop one. |
 | `b` | Autonomous balloon search (mode Auto). |
 | `g` | Autonomous goal search. With the current firmware this also tracks balloons. |
-| `c` | Ask the robot to calibrate its sensors. Keep it still. |
+| `c` | Set the **ESC throttle-calibration** flag. On the robot's next power-up the firmware sends full throttle for 8 s, then minimum for 8 s, so the ESCs learn the range; they normally only beep, but an ESC that does not enter calibration spins its motor at full throttle. **Remove the propellers first.** Without a number it goes to every robot. See `firmware/FLASHING.md`, section 7. |
 | `p` | Send the preferences in `Preferences.py` (the `FF:FF:FF:FF:FF:FF` block, then the robot's own block if it has one). |
 | `a` / `d` | Send the attacker / defender preference sets. |
 | `y` / `o` | Send the yellow / orange goal preference sets. **Avoid**: they are for goal mode, and `o` sets the camera frame to 160×120, which does not match the camera (240×160). |
@@ -74,14 +74,14 @@ Applies to the selected robot only.
 
 | Input | Action |
 |---|---|
-| **B** | From Off: switch to Manual, keeping the current height and heading as targets. From Manual or any autonomous mode: switch to Off. The robot starts Off. |
+| **B** | From Off: switch to Manual, keeping the current height and heading as targets. From Manual or any autonomous mode: switch to Off. The robot starts Off. **Tap it**: the button is read every 0.2 s, so holding it toggles On/Off repeatedly. |
 | **A** | Auto mode (search, then track). |
 | **X** | Balloon mode. |
 | **Y** | Goal mode. With the current firmware this tracks balloons. |
-| Left stick up/down | Raise / lower the height target. |
+| Left stick up/down | Raise / lower the height target. With the `modified-blimpswarm` firmware, pushing down past about half also turns the thrust downward (the motors pause for about 0.5 s while the servos swing). |
 | Right stick left/right | Turn (yaw target). |
-| Right trigger (RT) | Forward thrust. |
-| Left trigger (LT) | Backward thrust. |
+| Right trigger (RT) | Forward thrust (backward with the original `robot-printonly` firmware). |
+| Left trigger (LT) | Backward thrust (forward with the original `robot-printonly` firmware). |
 | LB / RB | Sent to the robot but not used by this robot type. |
 
 Stick inputs below 15% and trigger inputs below 5% are ignored. Releasing the sticks
@@ -110,8 +110,8 @@ purple, green for green, red for red.
 | Element | Meaning |
 |---|---|
 | Battery | Robot battery voltage. |
-| Yaw dial | Current heading (blue) and target heading (red). |
-| Height bars | Current (Cur) and target (Des) height. |
+| Yaw dial | Current heading (blue) and the heading captured when **B** was last pressed (red). The red needle does not follow stick input, so it is not the robot's live target. |
+| Height bars | Current (Cur) height, and the height captured when **B** was last pressed (Des); like the red needle, Des does not follow the stick. |
 | Camera box (right) | The camera frame; the purple square is the tracked target. Its size shows detection confidence, not the target's real size. Empty when nothing is detected. |
 | Send Success | Always shown in this version; it is not a real link check. Use the telemetry age in status line 1 instead. |
 | Status line 1 | Mode and motion being sent, selected color, and age of the last telemetry. |
