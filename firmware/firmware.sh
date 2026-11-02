@@ -9,7 +9,8 @@ usage() {
     cat <<'HELP'
 Usage:
   ./firmware.sh ports                      list board serial ports
-  ./firmware.sh build base                 build the base station (PC-side radio)
+  ./firmware.sh build base                 build the base station (PC-side radio), ESP32-S3 boards only;
+                                           for a plain ESP32 base see FLASHING.md section 4
   ./firmware.sh build robot                build the robot firmware
   ./firmware.sh upload base /dev/ttyACM0   build and flash the base station
   ./firmware.sh upload robot /dev/ttyACM0  build and flash the robot
