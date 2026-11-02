@@ -2,6 +2,8 @@
 
 本分支 `modified-blimpswarm`：改版组合（截至 2026-11-02）。
 
+**上手请先看 [firmware/FLASHING.md](firmware/FLASHING.md)**：编译环境、烧录机器人与基站、地面站配置、第一次上电检查。
+
 - 根目录：电脑端地面站（本地修改版：手柄映射修正、飞行日志、仪表盘），操作说明见 `CONTROLS.md`。
 - `firmware/`：机器人固件 BlimpSwarm 修改版，修改记录见 `firmware/MANUAL-FLIGHT-NOTES.md` 和源码注释。
 
@@ -18,6 +20,6 @@
 
 `Preferences.py` 已按此固件设置：`pitchEn=True`、`botZlim=-0.5`；必须先烧录本固件再按 `p` 下发。
 
-编译烧录：`firmware/firmware.sh build robot` / `upload robot <串口>`，脚本使用 `firmware/.toolchain`（Arduino ESP32 核心 2.0.17、ESP32Servo 1.2.1，未包含在仓库中）。
+编译烧录见 `firmware/FLASHING.md`。本机也可用 `firmware/firmware.sh build robot` / `upload robot <串口>`，该脚本使用 `firmware/.toolchain`（Arduino ESP32 核心 2.0.17、ESP32Servo 1.2.1，未包含在仓库中）。
 
 未包含：飞行日志 `logs/`、`.venv`、编译产物、工具链、本地备份（`.bak`、`preserved/`）、上游 `docs/`。
