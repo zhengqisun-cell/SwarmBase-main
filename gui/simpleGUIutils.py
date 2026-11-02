@@ -70,7 +70,10 @@ def update_nicla(self, x=None, y=None, width=None, height=None):
     if x is None:
         return
     
-    self.nicla_x = self.NBP[0] + ((x - width / 2) / self.NB[0]) * self.NBS[0]
+    # The camera reports the frame the robot firmware expects (the original upside-down camera):
+    # target to the right -> small x, target above -> large y. Mirror x so the box shows where
+    # the target really is; large y already maps to the top of the plot.
+    self.nicla_x = self.NBP[0] + (1 - (x + width / 2) / self.NB[0]) * self.NBS[0]
     self.nicla_y = self.NBP[1] + ((y - height / 2) / self.NB[1]) * self.NBS[1]
     self.nicla_width = (width / self.NB[0]) * self.NBS[0]
     self.nicla_height = (height / self.NB[1]) * self.NBS[1]

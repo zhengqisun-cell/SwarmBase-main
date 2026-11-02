@@ -84,7 +84,7 @@ if __name__ == "__main__":
     {"data_type": DataType_Float, "key": "kdpitch", "value": -0.3},
 
     {"data_type": DataType_Float, "key": "z_int_low", "value": 0},
-    {"data_type": DataType_Float, "key": "z_int_high", "value": 0.15},
+    {"data_type": DataType_Float, "key": "z_int_high", "value": 0.01},
     {"data_type": DataType_Float, "key": "yawRateIntRange", "value": 0},
     {"data_type": DataType_Float, "key": "lx", "value": 0.15},
     {"data_type": DataType_Float, "key": "servoRange", "value": 180},
@@ -95,13 +95,13 @@ if __name__ == "__main__":
     {"data_type": DataType_Float, "key": "pitchInvert", "value": -1},
 
     {"data_type": DataType_Int, "key": "state_flag", "value": 0x40},
-    {"data_type": DataType_Int, "key": "num_captures", "value": 2},
+    {"data_type": DataType_Int, "key": "num_captures", "value": 250},
     {"data_type": DataType_Int, "key": "time_in_ball", "value": 500},
     {"data_type": DataType_Float, "key": "goal_height", "value": 7},
 
     {"data_type": DataType_Float, "key": "y_thresh", "value": 0.57},
-    {"data_type": DataType_Float, "key": "y_strength", "value": 3.5},
-    {"data_type": DataType_Float, "key": "x_strength", "value": 2},
+    {"data_type": DataType_Float, "key": "y_strength", "value": 2.5},
+    {"data_type": DataType_Float, "key": "x_strength", "value": 1},
     {"data_type": DataType_Float, "key": "fx_togoal", "value": 0.3},
     {"data_type": DataType_Float, "key": "fx_charge", "value": 0.5},
     {"data_type": DataType_Float, "key": "fx_levy", "value": 0.25},
